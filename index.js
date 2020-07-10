@@ -347,7 +347,14 @@ const query = async function(config,..._args) {
   const parameters = normalizeParams(parseParams(args))
 
   // Process parameters and escape necessary SQL
-  const { processedParams,escapedSql } = processParams(sql,sqlParams,parameters,formatOptions)
+  let { processedParams,escapedSql } = processParams(sql,sqlParams,parameters);
+
+  // Remove UUID values from parameters, hardcode to SQL
+  parameters.map(parameter => {
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(parameter.value)) {
+      escapedSql = escapedSql.replace(`:${parameter.name}`, `'${parameter.value}'`)
+    }
+  })
 
   // Determine if this is a batch request
   const isBatch = processedParams.length > 0
